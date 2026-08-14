@@ -1,6 +1,25 @@
 ```
-# Build artifacts
-outlook-layout.html
+# Compiled and build artifacts
+*.pyc
+__pycache__/
+*.o
+*.obj
+dist/
+build/
+out/
+*.exe
+*.dll
+*.so
+*.a
+*.out
+
+# Dependencies
+.venv/
+venv/
+.env
+.env.local
+*.env.*
+node_modules/
 
 # Logs and temp files
 *.log
@@ -11,6 +30,7 @@ outlook-layout.html
 .env
 .env.local
 *.env.*
+*.swo
 
 # Editors
 .vscode/
@@ -44,6 +64,14 @@ Thumbs.db
 *.out
 
 # Coverage reports
+*.swp
+*.swo
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Coverage
 coverage/
 htmlcov/
 .coverage
