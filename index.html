@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebMail - Outlook Style</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --type-important: #dc3545;
+            --type-social: #0d6efd;
+            --type-finance: #198754;
+            --type-promotions: #ffc107;
+            --type-personal: #6f42c1;
+        }
+        body { height: 100vh; overflow: hidden; }
+        .main-container { height: calc(100vh - 56px); }
+        .folders-panel { background-color: #f8f9fa; border-right: 1px solid #dee2e6; overflow-y: auto; height: 100%; }
+        .message-list-panel { background-color: #ffffff; border-right: 1px solid #dee2e6; overflow-y: auto; height: 100%; }
+        .reading-pane { background-color: #ffffff; overflow-y: auto; height: 100%; }
+        .folder-item { cursor: pointer; transition: background-color 0.2s; padding: 8px 12px; border-radius: 4px; margin-bottom: 4px; }
+        .folder-item:hover { background-color: #e9ecef; }
+        .folder-item.active { background-color: #cfe2ff; color: #0d6efd; }
+        .message-type-marker { width: 4px; min-width: 4px; height: 100%; position: absolute; left: 0; top: 0; border-radius: 4px 0 0 4px; }
+        .marker-important { background-color: var(--type-important); }
+        .marker-social { background-color: var(--type-social); }
+        .marker-finance { background-color: var(--type-finance); }
+        .marker-promotions { background-color: var(--type-promotions); }
+        .marker-personal { background-color: var(--type-personal); }
+        .message-card { cursor: pointer; transition: background-color 0.2s; padding: 12px; border-bottom: 1px solid #f0f0f0; position: relative; padding-left: 20px; }
+        .message-card:hover { background-color: #f8f9fa; }
+        .message-card.active { background-color: #e7f1ff; }
+        .message-card.unread .message-sender { font-weight: 700; }
+        .message-card.read .message-sender { font-weight: 400; color: #6c757d; }
+        .badge-important { background-color: var(--type-important); }
+        .badge-social { background-color: var(--type-social); }
+        .badge-finance { background-color: var(--type-finance); }
+        .badge-promotions { background-color: var(--type-promotions); color: #000; }
+        .badge-personal { background-color: var(--type-personal); }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .avatar { width: 40px; height: 40px; background-color: #0d6efd; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.9rem; }
+        .avatar-lg { width: 50px; height: 50px; font-size: 1.2rem; }
+        .search-panel { background-color: #f8f9fa; border-bottom: 1px solid #dee2e6; padding: 12px; }
+        @media (max-width: 991px) {
+            .folders-panel, .message-list-panel { position: fixed; top: 56px; bottom: 0; z-index: 1000; transition: transform 0.3s ease; }
+            .folders-panel { left: 0; right: 0; transform: translateX(-100%); }
+            .folders-panel.show { transform: translateX(0); }
+            .message-list-panel { left: 0; right: 0; transform: translateX(-100%); }
+            .message-list-panel.show { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark" style="height: 56px;">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#"><i class="bi bi-envelope-open me-2"></i>WebMail</a>
+            <button class="btn btn-primary btn-sm d-none d-lg-block" data-bs-toggle="modal" data-bs-target="#composeModal"><i class="bi bi-plus-lg me-1"></i>Создать письмо</button>
+            <button class="navbar-toggler" type="button" id="navToggleBtn"><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav me-auto ms-3">
+                    <li class="nav-item"><a class="nav-link active" href="#"><i class="bi bi-inbox me-1"></i>Почта</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-calendar me-1"></i>Календарь</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#"><i class="bi bi-people me-1"></i>Контакты</a></li>
+                </ul>
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-outline-light btn-sm me-2" data-bs-toggle="modal" data-bs-target="#advancedSearchModal"><i class="bi bi-funnel me-1"></i><span class="d-none d-sm-inline">Расширенный поиск</span></button>
+                    <div class="dropdown">
+                        <a class="text-white text-decoration-none dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"><div class="avatar d-inline-block me-1" style="width: 32px; height: 32px; font-size: 0.8rem;">П</div><span class="d-none d-md-inline">Пользователь</span></a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Настройки</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-question-circle me-2"></i>Помощь</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-box-arrow-right me-2"></i>Выход</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div class="row g-0 h-100">
+            <div class="col-lg-2 folders-panel" id="foldersPanel">
+                <div class="p-3">
+                    <button class="btn btn-primary w-100 mb-3 d-lg-none" data-bs-toggle="modal" data-bs-target="#composeModal"><i class="bi bi-plus-lg me-1"></i>Новое письмо</button>
+                    <h6 class="text-uppercase text-muted mb-3" style="font-size: 0.75rem;">Папки</h6>
+                    <div class="folder-item active" data-folder="inbox"><i class="bi bi-inbox me-2"></i>Входящие<span class="badge bg-primary float-end">5</span></div>
+                    <div class="folder-item" data-folder="sent"><i class="bi bi-send me-2"></i>Отправленные</div>
+                    <div class="folder-item" data-folder="drafts"><i class="bi bi-file-earmark me-2"></i>Черновики<span class="badge bg-warning text-dark float-end">2</span></div>
+                    <div class="folder-item" data-folder="deleted"><i class="bi bi-trash me-2"></i>Удаленные</div>
+                    <div class="folder-item" data-folder="spam"><i class="bi bi-exclamation-circle me-2"></i>Спам<span class="badge bg-danger float-end">12</span></div>
+                    <hr class="my-3">
+                    <h6 class="text-uppercase text-muted mb-3" style="font-size: 0.75rem;">Типы сообщений</h6>
+                    <div class="mb-2"><span class="legend-dot marker-important"></span><span class="small">Важное</span></div>
+                    <div class="mb-2"><span class="legend-dot marker-social"></span><span class="small">Социальные сети</span></div>
+                    <div class="mb-2"><span class="legend-dot marker-finance"></span><span class="small">Финансы</span></div>
+                    <div class="mb-2"><span class="legend-dot marker-promotions"></span><span class="small">Рассылки</span></div>
+                    <div class="mb-2"><span class="legend-dot marker-personal"></span><span class="small">Личное</span></div>
+                </div>
+            </div>
+            <div class="col-lg-2 message-list-panel" id="messageListPanel">
+                <div class="search-panel">
+                    <div class="input-group input-group-sm">
+                        <input type="text" class="form-control" id="quickSearch" placeholder="Поиск...">
+                        <button class="btn btn-outline-secondary" type="button" id="btnQuickSearch"><i class="bi bi-search"></i></button>
+                    </div>
+                </div>
+                <div id="messagesContainer"></div>
+            </div>
+            <div class="col-lg-8 reading-pane" id="readingPane">
+                <div class="p-4" id="messageContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="advancedSearchModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title"><i class="bi bi-funnel me-2"></i>Расширенный поиск</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <form id="advancedSearchForm">
+                        <div class="row g-3">
+                            <div class="col-md-12"><label class="form-label">Ключевые слова</label><input type="text" class="form-control" id="searchKeywords" placeholder="Искать в теме и теле письма"></div>
+                            <div class="col-md-6"><label class="form-label">Отправитель</label><input type="text" class="form-control" id="searchSender" placeholder="Email или имя"></div>
+                            <div class="col-md-6"><label class="form-label">Получатель</label><input type="text" class="form-control" id="searchRecipient" placeholder="Email или имя"></div>
+                            <div class="col-md-6"><label class="form-label">Тип сообщения</label><select class="form-select" id="searchType"><option value="">Все типы</option><option value="important">Важное</option><option value="social">Социальные сети</option><option value="finance">Финансы</option><option value="promotions">Рассылки</option><option value="personal">Личное</option></select></div>
+                            <div class="col-md-6"><label class="form-label">Папка</label><select class="form-select" id="searchFolder"><option value="">Все папки</option><option value="inbox">Входящие</option><option value="sent">Отправленные</option><option value="drafts">Черновики</option><option value="deleted">Удаленные</option><option value="spam">Спам</option></select></div>
+                            <div class="col-md-6"><label class="form-label">Дата с</label><input type="date" class="form-control" id="searchDateFrom"></div>
+                            <div class="col-md-6"><label class="form-label">Дата по</label><input type="date" class="form-control" id="searchDateTo"></div>
+                            <div class="col-md-12"><div class="form-check"><input class="form-check-input" type="checkbox" id="searchAttachments"><label class="form-check-label" for="searchAttachments">Только с вложениями</label></div></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button><button type="button" class="btn btn-primary" id="btnApplySearch"><i class="bi bi-search me-1"></i>Найти</button></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="composeModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Новое сообщение</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-3"><label class="form-label">Кому</label><input type="email" class="form-control" placeholder="recipient@example.com"></div>
+                        <div class="mb-3"><label class="form-label">Тема</label><input type="text" class="form-control" placeholder="Тема письма"></div>
+                        <div class="mb-3"><label class="form-label">Сообщение</label><textarea class="form-control" rows="10"></textarea></div>
+                    </form>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button><button type="button" class="btn btn-outline-primary">Сохранить в черновики</button><button type="button" class="btn btn-primary"><i class="bi bi-send me-1"></i>Отправить</button></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const messages = [
+            { id: 1, sender: "Иван Иванов", email: "ivan.ivanov@company.com", subject: "Обновление проекта Alpha", preview: "Добрый день! Направляю обновленную информацию по проекту...", body: "<p>Добрый день, коллеги!</p><p>Направляю вам обновленную информацию по проекту Alpha.</p><h5>Основные достижения:</h5><ul><li>Реализован модуль авторизации</li><li>Интегрирована система уведомлений</li></ul><p>С уважением, Иван Иванов</p>", date: "Сегодня, 10:30", time: "10:30", type: "important", typeName: "Важное", folder: "inbox", read: false, hasAttachments: true, attachments: [{name: "Отчет_Alpha.pdf", size: "2.4 MB", icon: "file-earmark-pdf"}, {name: "План_работ.xlsx", size: "156 KB", icon: "file-earmark-excel"}] },
+            { id: 2, sender: "Мария Петрова", email: "maria.petrova@social.com", subject: "Приглашение в группу", preview: "Мария добавила вас в группу Команда проекта...", body: "<p><strong>Мария Петрова</strong> добавила вас в группу <strong>Команда проекта</strong>.</p>", date: "Вчера, 15:45", time: "15:45", type: "social", typeName: "Социальные сети", folder: "inbox", read: false, hasAttachments: false, attachments: [] },
+            { id: 3, sender: "Банк Онлайн", email: "noreply@bankonline.ru", subject: "Выписка по счету за ноябрь", preview: "Ваша ежемесячная выписка готова к просмотру...", body: "<p>Уважаемый клиент!</p><p>Ваша выписка по счету готова.</p><ul><li>Начальный остаток: 125 450 ₽</li><li>Поступления: 85 000 ₽</li></ul>", date: "Вчера, 09:15", time: "09:15", type: "finance", typeName: "Финансы", folder: "inbox", read: true, hasAttachments: true, attachments: [{name: "Vypiska_Noyabr.pdf", size: "89 KB", icon: "file-earmark-pdf"}] },
+            { id: 4, sender: "ShopBest Распродажи", email: "sales@shopbest.ru", subject: "Черная пятница! Скидки до 90%", preview: "Только сегодня уникальные предложения...", body: "<h3>Черная пятница!</h3><p>Скидки до 90% на все категории товаров!</p>", date: "2 дня назад", time: "", type: "promotions", typeName: "Рассылки", folder: "inbox", read: true, hasAttachments: false, attachments: [] },
+            { id: 5, sender: "Дмитрий Козлов", email: "dmitry.kozlov@gmail.com", subject: "Выходные на даче?", preview: "Привет! Планируем собраться в эти выходные...", body: "<p>Привет!</p><p>Планируем собраться в эти выходные на даче.</p><p>До связи, Дмитрий</p>", date: "3 дня назад", time: "", type: "personal", typeName: "Личное", folder: "inbox", read: true, hasAttachments: false, attachments: [] },
+            { id: 6, sender: "HR Отдел", email: "hr@company.com", subject: "Напоминание: Оценка персонала", preview: "Коллеги, напоминаем о необходимости пройти оценку...", body: "<p>Уважаемые коллеги!</p><p>До 30 декабря необходимо пройти ежегодную оценку.</p>", date: "4 дня назад", time: "", type: "important", typeName: "Важное", folder: "inbox", read: false, hasAttachments: false, attachments: [] },
+            { id: 7, sender: "LinkedIn", email: "notifications@linkedin.com", subject: "Новое подключение: Анна Смирнова", preview: "Анна Смирнова приняла ваше приглашение...", body: "<p><strong>Отличные новости!</strong></p><p>Анна Смирнова приняла ваше приглашение.</p>", date: "5 дней назад", time: "", type: "social", typeName: "Социальные сети", folder: "inbox", read: true, hasAttachments: false, attachments: [] }
+        ];
+        let currentMessageId = null;
+        let filteredMessages = [...messages];
+        function getInitials(name) { return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2); }
+        function getAvatarColor(type) { const colors = { important: '#dc3545', social: '#0d6efd', finance: '#198754', promotions: '#ffc107', personal: '#6f42c1' }; return colors[type] || '#0d6efd'; }
+        function renderMessages(msgs) {
+            const container = document.getElementById('messagesContainer');
+            container.innerHTML = '';
+            msgs.forEach(function(msg) {
+                const card = document.createElement('div');
+                card.className = 'message-card ' + (msg.read ? 'read' : 'unread') + (currentMessageId === msg.id ? ' active' : '');
+                card.onclick = function() { selectMessage(msg.id); };
+                card.innerHTML = '<div class="message-type-marker marker-' + msg.type + '"></div><div class="form-check mb-2"><input class="form-check-input" type="checkbox" onclick="event.stopPropagation()"></div><div class="d-flex justify-content-between align-items-start mb-1"><div class="avatar" style="background-color: ' + getAvatarColor(msg.type) + '; width: 36px; height: 36px; font-size: 0.8rem;">' + getInitials(msg.sender) + '</div><small class="text-muted">' + (msg.time || msg.date.split(',')[0]) + '</small></div><div class="message-sender mb-1">' + msg.sender + '</div><div class="fw-bold mb-1 text-truncate">' + msg.subject + '</div><div class="text-muted small text-truncate">' + msg.preview + '</div><div class="mt-2"><span class="badge badge-' + msg.type + '">' + msg.typeName + '</span>' + (msg.hasAttachments ? '<i class="bi bi-paperclip ms-1 text-muted"></i>' : '') + '</div>';
+                container.appendChild(card);
+            });
+        }
+        function selectMessage(id) {
+            currentMessageId = id;
+            const msg = messages.find(function(m) { return m.id === id; });
+            if (!msg) return;
+            msg.read = true;
+            renderMessages(filteredMessages);
+            if (window.innerWidth < 992) document.getElementById('messageListPanel').classList.remove('show');
+            const contentDiv = document.getElementById('messageContent');
+            let attachmentsHtml = '';
+            if (msg.attachments.length > 0) {
+                attachmentsHtml = '<div class="mt-4 pt-3 border-top"><h6><i class="bi bi-paperclip me-2"></i>Вложения (' + msg.attachments.length + ')</h6><div class="d-flex flex-wrap gap-3 mt-2">';
+                msg.attachments.forEach(function(att) {
+                    attachmentsHtml += '<div class="card" style="width: 200px;"><div class="card-body py-2 px-3"><div class="d-flex align-items-center"><i class="bi bi-' + att.icon + ' text-' + (att.icon.includes('pdf') ? 'danger' : 'success') + ' fs-4 me-2"></i><div><div class="small fw-bold mb-0">' + att.name + '</div><div class="small text-muted">' + att.size + '</div></div></div></div></div>';
+                });
+                attachmentsHtml += '</div></div>';
+            }
+            contentDiv.innerHTML = '<div class="mb-4 pb-3 border-bottom"><div class="d-flex justify-content-between align-items-start mb-3"><h4 class="mb-0">' + msg.subject + '</h4><div class="d-none d-md-block"><button class="btn btn-sm btn-outline-secondary me-1"><i class="bi bi-reply"></i></button><button class="btn btn-sm btn-outline-secondary me-1"><i class="bi bi-reply-all"></i></button><button class="btn btn-sm btn-outline-secondary me-1"><i class="bi bi-forward"></i></button><button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button></div></div><div class="d-flex align-items-center mb-3"><div class="avatar avatar-lg me-3" style="background-color: ' + getAvatarColor(msg.type) + ';">' + getInitials(msg.sender) + '</div><div class="flex-grow-1"><div class="fw-bold">' + msg.sender + '</div><div class="text-muted small">' + msg.email + '</div></div><div class="text-muted small">' + msg.date + '</div></div><div class="d-flex gap-2 mb-3"><span class="badge badge-' + msg.type + '">' + msg.typeName + '</span>' + (msg.hasAttachments ? '<span class="badge bg-secondary"><i class="bi bi-paperclip me-1"></i>Вложения</span>' : '') + '</div></div><div class="message-body">' + msg.body + '</div>' + attachmentsHtml + '<div class="mt-4 pt-3 border-top d-md-none"><div class="d-grid gap-2"><button class="btn btn-outline-primary"><i class="bi bi-reply me-2"></i>Ответить</button><button class="btn btn-outline-primary"><i class="bi bi-forward me-2"></i>Переслать</button><button class="btn btn-outline-danger"><i class="bi bi-trash me-2"></i>Удалить</button></div></div>';
+        }
+        document.getElementById('btnQuickSearch').addEventListener('click', function() {
+            const query = document.getElementById('quickSearch').value.toLowerCase();
+            filteredMessages = query ? messages.filter(function(msg) { return msg.sender.toLowerCase().includes(query) || msg.subject.toLowerCase().includes(query) || msg.preview.toLowerCase().includes(query); }) : [...messages];
+            currentMessageId = null;
+            renderMessages(filteredMessages);
+            document.getElementById('messageContent').innerHTML = '<div class="text-muted text-center mt-5"><i class="bi bi-inbox fs-1"></i><p class="mt-3">Выберите письмо для просмотра</p></div>';
+        });
+        document.getElementById('btnApplySearch').addEventListener('click', function() {
+            const type = document.getElementById('searchType').value;
+            const folder = document.getElementById('searchFolder').value;
+            const keywords = document.getElementById('searchKeywords').value.toLowerCase();
+            const sender = document.getElementById('searchSender').value.toLowerCase();
+            const hasAttachments = document.getElementById('searchAttachments').checked;
+            filteredMessages = messages.filter(function(msg) {
+                let match = true;
+                if (type && msg.type !== type) match = false;
+                if (folder && msg.folder !== folder) match = false;
+                if (keywords && !msg.subject.toLowerCase().includes(keywords) && !msg.body.toLowerCase().includes(keywords)) match = false;
+                if (sender && !msg.sender.toLowerCase().includes(sender) && !msg.email.toLowerCase().includes(sender)) match = false;
+                if (hasAttachments && !msg.hasAttachments) match = false;
+                return match;
+            });
+            currentMessageId = null;
+            renderMessages(filteredMessages);
+            document.getElementById('messageContent').innerHTML = '<div class="text-muted text-center mt-5"><i class="bi bi-inbox fs-1"></i><p class="mt-3">Выберите письмо для просмотра</p></div>';
+            bootstrap.Modal.getInstance(document.getElementById('advancedSearchModal')).hide();
+        });
+        document.querySelectorAll('.folder-item').forEach(function(item) {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.folder-item').forEach(function(i) { i.classList.remove('active'); });
+                this.classList.add('active');
+                const folder = this.dataset.folder;
+                filteredMessages = folder ? messages.filter(function(m) { return m.folder === folder; }) : [...messages];
+                currentMessageId = null;
+                renderMessages(filteredMessages);
+                document.getElementById('messageContent').innerHTML = '<div class="text-muted text-center mt-5"><i class="bi bi-inbox fs-1"></i><p class="mt-3">Выберите письмо для просмотра</p></div>';
+                if (window.innerWidth < 992) { document.getElementById('foldersPanel').classList.remove('show'); document.getElementById('messageListPanel').classList.add('show'); }
+            });
+        });
+        document.getElementById('navToggleBtn').addEventListener('click', function() { document.getElementById('foldersPanel').classList.toggle('show'); });
+        renderMessages(messages);
+        selectMessage(messages[0].id);
+    </script>
+</body>
+</html>
